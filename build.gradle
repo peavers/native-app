@@ -32,6 +32,10 @@ test {
 	useJUnitPlatform()
 }
 
+bootJar {
+	archiveFileName = "${archiveBaseName.get()}-0.0.1.${archiveExtension.get()}"
+}
+
 bootBuildImage {
 	builder = 'paketobuildpacks/builder:tiny'
 	environment = ['BP_NATIVE_IMAGE': 'true']
