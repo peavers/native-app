@@ -10,6 +10,8 @@ jobs:
   build-jar-job:
     name: 'Build JAR'
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     steps:
       - name: 'Checkout'
@@ -82,6 +84,8 @@ jobs:
           - os: 'macos-latest'
             label: 'mac'
     runs-on: ${{matrix.os}}
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     steps:
       - name: 'Checkout'
@@ -120,7 +124,7 @@ jobs:
           echo "::set-env name=UPLOAD_URL::$(cat upload_url.txt)"
       - name: 'Build Native Image'
         run: |
-          native-image --no-server --no-fallback -H:ReflectionConfigurationResources=reflection-config.json -H:IncludeResources=logback.xml --SNAPSHOTow-incomplete-classpath -jar native-app-${{env.VERSION}}-SNAPSHOT.jar
+          native-image --no-server --no-fallback --allow-incomplete-classpath -jar native-app-${{env.VERSION}}.jar
       - name: 'Publish Native Image'
         if: success()
         uses: actions/upload-artifact@v2-preview
@@ -144,6 +148,8 @@ jobs:
     needs: [ build-jar-job ]
     name: 'Build Windows Image'
     runs-on: windows-latest
+    env:
+      ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     steps:
 
@@ -178,7 +184,7 @@ jobs:
           JAVA_HOME: ./graalvm-ce-java11-20.1.0
         run: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-          ./graalvm-ce-java11-20.1.0/bin/native-image --no-server --no-fallback -H:ReflectionConfigurationResources=reflection-config.json -H:IncludeResources=logback.xml -H:Name=native-app-${{env.VERSION}}-SNAPSHOT --SNAPSHOTow-incomplete-classpath -jar native-app-${{env.VERSION}}-SNAPSHOT.jar
+          ./graalvm-ce-java11-20.1.0/bin/native-image --no-server --no-fallback -H:Name=native-app-${{env.VERSION}}-SNAPSHOT --SNAPSHOTow-incomplete-classpath -jar native-app-${{env.VERSION}}-SNAPSHOT.jar
       - name: 'Get Release URL'
         if: contains(github.ref, 'v')
         uses: actions/download-artifact@v2-preview
