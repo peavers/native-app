@@ -10,7 +10,6 @@ jobs:
   build-jar-job:
     name: 'Build JAR'
     runs-on: ubuntu-latest
-    environment: ACTIONS_ALLOW_UNSECURE_COMMANDS=true # YOLO!
 
     steps:
       - name: 'Checkout'
