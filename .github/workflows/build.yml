@@ -1,8 +1,6 @@
 name: native-app
 on:
   push:
-    tags:
-      - "v*"
     branches:
       - 'master'
 
@@ -22,21 +20,18 @@ jobs:
         with:
           distribution: adopt
           java-version: 11
-
+      
       - name: 'Build JAR'
         run: |
           ./gradlew bootJar
-      - name: 'Get Version Number'
-        run: |
-          echo "::set-env name=VERSION::$(./gradlew properties -q | grep "version:" | awk '{print $2}')"
+     
       - name: 'Publish JAR'
         uses: actions/upload-artifact@v2-preview
         with:
-          name: 'native-app-${{env.VERSION}}.jar'
+          name: 'native-app.jar'
           path: build/libs/*.jar
 
       - name: 'Create Release'
-        if: contains(github.ref, 'v')
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -50,23 +45,21 @@ jobs:
           prerelease: false
 
       - name: 'Upload Release Asset'
-        if: contains(github.ref, 'v')
         id: upload-release-asset
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
           upload_url: ${{steps.create_release.outputs.upload_url}}
-          asset_path: build/libs/native-app-${{env.VERSION}}.jar
-          asset_name: native-app-${{env.VERSION}}.jar
+          asset_path: build/libs/native-app.jar
+          asset_name: native-app.jar
           asset_content_type: application/java-archive
 
       - name: 'Write Upload URL To File'
-        if: contains(github.ref, 'v')
         run: |
           echo "${{steps.create_release.outputs.upload_url}}" > upload_url.txt
+      
       - name: 'Publish Upload URL'
-        if: contains(github.ref, 'v')
         uses: actions/upload-artifact@v2-preview
         with:
           name: 'upload_url.txt'
@@ -106,33 +99,29 @@ jobs:
       - name: 'Install Native Image Plugin'
         run: |
           gu install native-image
-      - name: 'Get Version Number'
-        run: |
-          echo "::set-env name=VERSION::$(./gradlew properties -q | grep "version:" | awk '{print $2}')"
+
       - name: 'Get JAR Artifact'
         uses: actions/download-artifact@v2-preview
         with:
-          name: 'native-app-${{env.VERSION}}.jar'
+          name: 'native-app.jar'
 
       - name: 'Get Release URL'
-        if: contains(github.ref, 'v')
         uses: actions/download-artifact@v2-preview
         with:
           name: 'upload_url.txt'
 
       - name: 'Get Upload URL'
-        if: contains(github.ref, 'v')
         run: |
           echo "::set-env name=UPLOAD_URL::$(cat upload_url.txt)"
       - name: 'Build Native Image'
         run: |
-          native-image --no-server --no-fallback --allow-incomplete-classpath -jar native-app-${{env.VERSION}}.jar
+          native-image --no-server --no-fallback --allow-incomplete-classpath -jar native-app.jar
       - name: 'Publish Native Image'
         if: success()
         uses: actions/upload-artifact@v2-preview
         with:
-          name: 'native-app-${{env.VERSION}}-${{matrix.label}}'
-          path: 'native-app-${{env.VERSION}}'
+          name: 'native-app-${{matrix.label}}'
+          path: 'native-app'
 
       - name: 'Release Native Image Asset'
         if: success() && contains(github.ref, 'v')
@@ -142,8 +131,8 @@ jobs:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
           upload_url: ${{env.UPLOAD_URL}}
-          asset_name: 'native-app-${{env.VERSION}}-${{matrix.label}}'
-          asset_path: 'native-app-${{env.VERSION}}'
+          asset_name: 'native-app-${{matrix.label}}'
+          asset_path: 'native-app'
           asset_content_type: application/octet-stream
 
   build-windows-image:
@@ -154,7 +143,6 @@ jobs:
       ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
     steps:
-
       - name: 'Checkout'
         uses: actions/checkout@v1
 
@@ -170,15 +158,10 @@ jobs:
       - name: 'Set up Visual C Build Tools Workload for Visual Studio 2017 Build Tools'
         run: |
           choco install visualstudio2017-workload-vctools
-      - name: 'Get Version Number'
-        run: |
-          echo "::set-env name=VERSION::$(./gradlew properties -q | grep "version:" | awk '{print $2}')"
-        shell: bash
-
       - name: 'Get JAR Artifact'
         uses: actions/download-artifact@v2-preview
         with:
-          name: 'native-app-${{env.VERSION}}.jar'
+          name: 'native-app.jar'
 
       - name: 'Build Native Image'
         shell: cmd
@@ -186,15 +169,14 @@ jobs:
           JAVA_HOME: ./graalvm-ce-java11-21.2.0
         run: |
           call "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\VC\Auxiliary\Build\vcvars64.bat"
-          ./graalvm-ce-java11-21.2.0/bin/native-image --no-server --no-fallback --allow-incomplete-classpath -jar native-app-${{env.VERSION}}.jar
+          ./graalvm-ce-java11-21.2.0/bin/native-image --no-server --no-fallback --allow-incomplete-classpath -jar native-app.jar
       - name: 'Get Release URL'
-        if: contains(github.ref, 'v')
+      
         uses: actions/download-artifact@v2-preview
         with:
           name: 'upload_url.txt'
 
       - name: 'Get Upload URL'
-        if: contains(github.ref, 'v')
         run: |
           echo "::set-env name=UPLOAD_URL::$(cat upload_url.txt)"
         shell: bash
@@ -203,8 +185,8 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v2-preview
         with:
-          name: 'native-app-${{env.VERSION}}-windows.exe'
-          path: 'native-app-${{env.VERSION}}.exe'
+          name: 'native-app-windows.exe'
+          path: 'native-app.exe'
 
       - name: 'Release Windows Image Asset'
         if: success() && contains(github.ref, 'v')
@@ -214,6 +196,6 @@ jobs:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
           upload_url: ${{env.UPLOAD_URL}}
-          asset_name: 'native-app-${{env.VERSION}}-windows.exe'
-          asset_path: 'native-app-${{env.VERSION}}.exe'
+          asset_name: 'native-app-windows.exe'
+          asset_path: 'native-app.exe'
           asset_content_type: application/octet-stream

@@ -33,7 +33,7 @@ test {
 }
 
 bootJar {
-	archiveFileName = "${archiveBaseName.get()}-0.0.1.${archiveExtension.get()}"
+	archiveFileName = "${archiveBaseName.get()}.${archiveExtension.get()}"
 }
 
 bootBuildImage {
